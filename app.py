@@ -33,13 +33,30 @@ clf, encoders, X_train = train_model()
 st.title('Dự đoán phê duyệt đơn vay & Giải thích bằng SHAP')
 st.markdown(
     """
+    <div class="overlay"></div>
     <style>
     .stApp {
         background-image: url('https://i.postimg.cc/x8Ymdw0y/background.jpg');
         background-size: cover;
         background-repeat: no-repeat;
         background-attachment: fixed;
+        filter: brightness(1.5);
     }
+
+    .overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+            rgba(10, 30, 60, 0.45),  
+            rgba(5, 20, 40, 0.55)  
+        );
+        z-index: -1;
+    }
+
+    
     </style>
     """,
     unsafe_allow_html=True
@@ -48,23 +65,27 @@ st.markdown(
 def user_input_features():
     df = pd.read_csv('loan_data.csv')
     str_cols = df.select_dtypes(include=['object']).columns
-    select_inputs = {}
-    for col in str_cols:
-        select_inputs[col] = df[col].dropna().unique().tolist()
-    
-    person_age = st.number_input('Tuổi', min_value=18, max_value=100, value=30)
-    person_gender = st.selectbox('Giới tính', select_inputs['person_gender'])
-    person_education = st.selectbox('Trình độ học vấn', select_inputs['person_education'])
-    person_income = st.number_input('Thu nhập', min_value=0, value=50000)
-    person_emp_exp = st.number_input('Kinh nghiệm làm việc (năm)', min_value=0, value=5)
-    person_home_ownership = st.selectbox('Hình thức sở hữu nhà', select_inputs['person_home_ownership'])
-    loan_amnt = st.number_input('Số tiền vay', min_value=0, value=10000)
-    loan_intent = st.selectbox('Mục đích vay', select_inputs['loan_intent'])
-    loan_int_rate = st.number_input('Lãi suất (%)', min_value=0.0, value=10.0)
-    loan_percent_income = st.number_input('Tỷ lệ vay/thu nhập (%)', min_value=0.0, value=20.0)
-    cb_person_cred_hist_length = st.number_input('Thời gian lịch sử tín dụng', min_value=0, value=5)
-    credit_score = st.number_input('Điểm tín dụng', min_value=0, value=700)
-    previous_loan_defaults_on_file = st.selectbox('Có nợ xấu trước đây?', select_inputs['previous_loan_defaults_on_file'])
+    select_inputs = {col: df[col].dropna().unique().tolist() for col in str_cols}
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        person_age = st.number_input('Tuổi', min_value=18, max_value=100, value=30)
+        person_gender = st.selectbox('Giới tính', select_inputs['person_gender'])
+        person_education = st.selectbox('Trình độ học vấn', select_inputs['person_education'])
+        person_income = st.number_input('Thu nhập', min_value=0, value=50000)
+        person_home_ownership = st.selectbox('Hình thức sở hữu nhà', select_inputs['person_home_ownership'])
+        loan_intent = st.selectbox('Mục đích vay', select_inputs['loan_intent'])
+        previous_loan_defaults_on_file = st.selectbox('Có nợ xấu trước đây?', select_inputs['previous_loan_defaults_on_file'])
+
+    with col2:
+        person_emp_exp = st.number_input('Kinh nghiệm làm việc (năm)', min_value=0, value=5)
+        loan_amnt = st.number_input('Số tiền vay', min_value=0, value=10000)
+        loan_int_rate = st.number_input('Lãi suất (%)', min_value=0.0, value=10.0)
+        loan_percent_income = st.number_input('Tỷ lệ vay/thu nhập (%)', min_value=0.0, value=20.0)
+        cb_person_cred_hist_length = st.number_input('Thời gian lịch sử tín dụng', min_value=0, value=5)
+        credit_score = st.number_input('Điểm tín dụng', min_value=0, value=700)
+
     data = {
         'person_age': person_age,
         'person_gender': person_gender,
