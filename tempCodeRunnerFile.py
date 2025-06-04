@@ -111,6 +111,7 @@ input_df = user_input_features()
 for col, le in encoders.items():
     input_df[col] = le.transform(input_df[col].astype(str))
 
+# Dự đoán
 if st.button('Dự đoán'):
     pred = clf.predict(input_df)[0]
     proba = clf.predict_proba(input_df)[0][1]
@@ -121,19 +122,21 @@ if st.button('Dự đoán'):
     explainer = shap.TreeExplainer(clf)
     shap_values = explainer.shap_values(input_df)
     st.subheader('Giải thích trực quan hóa SHAP')
-    with st.container():
-        fig, ax = plt.subplots()
-        shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], input_df.iloc[0])
-        st.pyplot(fig)
+    fig, ax = plt.subplots()
+    shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], input_df.iloc[0])
 
+    st.pyplot(fig)
 
+    # Gọi dify.ai API để lấy giải thích AI (giả sử bạn có API endpoint và key)
     st.subheader('Giải thích từ AI (dify.ai)')
     try:
         api_url = st.secrets["dify"]["api_url"]
         api_key = st.secrets["dify"]["api_key"]
         headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+        # Tạo input dạng paragraph
         input_text = '\n'.join([f"{k}: {v}" for k, v in input_df.to_dict(orient='records')[0].items()])
         prediction_text = "Được phê duyệt" if pred==1 else "Không được phê duyệt"
+        # query là nội dung chính để AI xử lý
         query = f"Thông tin khách hàng:\n{input_text}\nKết quả dự đoán: {prediction_text}\nHãy giải thích chi tiết lý do vì sao hệ thống đưa ra quyết định này."
         payload = {
             "inputs": {"input": input_text, "prediction": prediction_text},
@@ -143,6 +146,7 @@ if st.button('Dự đoán'):
         }
         response = requests.post(api_url, json=payload, headers=headers, timeout=60)
         if response.status_code == 200:
+            # Dify trả về answer trong trường 'answer'
             st.write(response.json().get('answer', 'Không có giải thích trả về.'))
         else:
             st.write(f'Không thể lấy giải thích từ AI. Mã lỗi: {response.status_code}')
