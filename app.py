@@ -121,7 +121,8 @@ if st.button('Dự đoán'):
     shap_values = explainer.shap_values(input_df)
     st.subheader('Giải thích trực quan hóa SHAP')
     fig, ax = plt.subplots()
-    shap.summary_plot(shap_values, input_df, plot_type="bar", show=False)
+    shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], input_df.iloc[0])
+
     st.pyplot(fig)
 
     # Gọi dify.ai API để lấy giải thích AI (giả sử bạn có API endpoint và key)
