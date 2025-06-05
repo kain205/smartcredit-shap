@@ -5,7 +5,6 @@ from xgboost import XGBClassifier
 import shap
 import matplotlib.pyplot as plt
 import requests
-import joblib
 
 # Load model and encoders (assume you have saved them, else retrain here)
 # For demo, retrain model each time (not recommended for production)
@@ -120,14 +119,14 @@ if st.button('Dự đoán'):
     # SHAP explain
     explainer = shap.TreeExplainer(clf)
     shap_values = explainer.shap_values(input_df)
-    st.subheader('Giải thích trực quan hóa SHAP')
+    st.subheader('Biểu đồ trực quan hóa SHAP')
     with st.container():
         fig, ax = plt.subplots()
         shap.plots._waterfall.waterfall_legacy(explainer.expected_value, shap_values[0], input_df.iloc[0])
         st.pyplot(fig)
 
 
-    st.subheader('Giải thích từ AI (dify.ai)')
+    st.subheader('Giải thích từ trợ lí ảo')
     try:
         api_url = st.secrets["dify"]["api_url"]
         api_key = st.secrets["dify"]["api_key"]
@@ -142,13 +141,22 @@ if st.button('Dự đoán'):
             "user": "user1"
         }
         response = requests.post(api_url, json=payload, headers=headers, timeout=60)
-        if response.status_code == 200:
-            st.write(response.json().get('answer', 'Không có giải thích trả về.'))
-        else:
-            st.write(f'Không thể lấy giải thích từ AI. Mã lỗi: {response.status_code}')
-            try:
-                st.write('Chi tiết lỗi:', response.json())
-            except Exception:
-                st.write('Không đọc được nội dung lỗi chi tiết từ response.')
+        with st.container():
+            if response.status_code == 200:
+                answer = response.json().get('answer', 'Không có giải thích trả về.')
+            else:
+                answer = f"Không thể lấy giải thích từ AI. Mã lỗi: {response.status_code}"
+                try:
+                    answer += '<br>Chi tiết lỗi: ' + str(response.json())
+                except Exception:
+                    answer += '<br>Không đọc được nội dung lỗi chi tiết từ response.'
+            st.markdown(
+                f"""
+                <div style='border: 2px solid #4A90E2; border-radius: 10px; padding: 16px; background-color: #0A0D16; margin-bottom: 16px;'>
+                {answer}
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
     except Exception as e:
         st.write('Lỗi khi gọi API:', str(e))
